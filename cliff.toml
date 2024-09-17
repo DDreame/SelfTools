@@ -1,0 +1,9 @@
+[changelog]
+path = "CHANGELOG.md"       # 生成的变更日志文件路径
+template = "keepachangelog" # 使用的模板类型，常用的如 Keep a Changelog 格式
+
+[git]
+tag_prefix = "v" # 版本号前缀，例如 v1.0.0
+
+[filter]
+include_unreleased = false # 是否包含未发布的变更
