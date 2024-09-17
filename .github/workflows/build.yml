@@ -26,7 +26,9 @@ jobs:
       - name: install dependencies (windows only)
         if: matrix.platform == 'windows-latest'
         run: |
-          winget install Microsoft.VisualStudio.2022.BuildTools --silent --override "--wait --passive --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
+          $vs_buildtools_url = "https://aka.ms/vs/17/release/vs_buildtools.exe"
+          Invoke-WebRequest -Uri $vs_buildtools_url -OutFile vs_buildtools.exe
+          Start-Process -FilePath .\vs_buildtools.exe -ArgumentList "--quiet", "--wait", "--norestart", "--nocache", "--installPath", "C:\BuildTools", "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64" -Wait -PassThru
       - name: install frontend dependencies
         run: npm install # or yarn install
       - uses: tauri-apps/tauri-action@v0
