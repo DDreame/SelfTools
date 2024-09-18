@@ -9,7 +9,8 @@ import { ThemeProvider } from './theme/ThemeContext';
 const AppContainer = styled.div`
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
+  width: 100%;
   overflow: hidden;
   background-color: ${props => props.theme.background};
   color: ${props => props.theme.text};

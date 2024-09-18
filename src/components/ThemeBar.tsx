@@ -46,7 +46,7 @@ const ThemeBar: React.FC = () => {
     <ThemeBarContainer>
       <IconContainer>
         <Icon src="../assets/react.svg" alt="Project Icon" />
-        <Title>工具箱</Title>
+        <Title>DDreame's ToolBox</Title>
       </IconContainer>
       <ThemeToggle onClick={toggleTheme}>切换主题</ThemeToggle>
     </ThemeBarContainer>
