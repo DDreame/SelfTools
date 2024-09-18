@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { open } from '@tauri-apps/api/dialog';
 import styled from 'styled-components';
@@ -120,13 +120,18 @@ const JsonContent = styled.span`
   color: ${props => props.theme.jsonColor};
 `;
 
+const MAX_STORED_LOGS = 10000; // 限制存储的日志数量
+
 const LogViewer: React.FC = () => {
-  const [logs, setLogs] = useState<string[]>([]);
-  const [filter, setFilter] = useState('');
-  const [level, setLevel] = useState('All');
-  const [startDateTime, setStartDateTime] = useState('');
-  const [endDateTime, setEndDateTime] = useState('');
-  const [logPath, setLogPath] = useState('');
+  const [logs, setLogs] = useState<string[]>(() => {
+    const savedLogs = localStorage.getItem('logViewerLogs');
+    return savedLogs ? JSON.parse(savedLogs) : [];
+  });
+  const [filter, setFilter] = useState(() => localStorage.getItem('logViewerFilter') || '');
+  const [level, setLevel] = useState(() => localStorage.getItem('logViewerLevel') || 'All');
+  const [startDateTime, setStartDateTime] = useState(() => localStorage.getItem('logViewerStartDateTime') || '');
+  const [endDateTime, setEndDateTime] = useState(() => localStorage.getItem('logViewerEndDateTime') || '');
+  const [logPath, setLogPath] = useState(() => localStorage.getItem('logViewerLogPath') || '');
   const [error, setError] = useState<string | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
@@ -145,16 +150,40 @@ const LogViewer: React.FC = () => {
     }
   }, [logPath, filter, level, startDateTime, endDateTime, debouncedFetchLogs]);
 
-  const parseTimestamp = (timestamp: string): string | null => {
+  useEffect(() => {
+    localStorage.setItem('logViewerLogs', JSON.stringify(logs.slice(-MAX_STORED_LOGS)));
+  }, [logs]);
+
+  useEffect(() => {
+    localStorage.setItem('logViewerFilter', filter);
+  }, [filter]);
+
+  useEffect(() => {
+    localStorage.setItem('logViewerLevel', level);
+  }, [level]);
+
+  useEffect(() => {
+    localStorage.setItem('logViewerStartDateTime', startDateTime);
+  }, [startDateTime]);
+
+  useEffect(() => {
+    localStorage.setItem('logViewerEndDateTime', endDateTime);
+  }, [endDateTime]);
+
+  useEffect(() => {
+    localStorage.setItem('logViewerLogPath', logPath);
+  }, [logPath]);
+
+  const parseTimestamp = useCallback((timestamp: string): string | null => {
     const date = moment.tz(timestamp, 'YYYY-MM-DD HH:mm:ss', 'Asia/Shanghai');
     if (!date.isValid()) {
-      console.error(`Invalid timestamp: ${timestamp}`);
+      console.error(`无效的时间戳: ${timestamp}`);
       return null;
     }
     return date.format('YYYY-MM-DDTHH:mm:ss');
-  };
+  }, []);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     if (!logPath) return;
     try {
       setError(null);
@@ -171,8 +200,6 @@ const LogViewer: React.FC = () => {
       if (fetchedLogs.length > 0 && isInitialLoad) {
         const firstLog = fetchedLogs[0];
         const lastLog = fetchedLogs[fetchedLogs.length - 1];
-        console.log('First log:', firstLog);
-        console.log('Last log:', lastLog);
 
         const firstTimestamp = parseTimestamp(firstLog.split(' ').slice(0, 2).join(' '));
         const lastTimestamp = parseTimestamp(lastLog.split(' ').slice(0, 2).join(' '));
@@ -186,15 +213,15 @@ const LogViewer: React.FC = () => {
         setIsInitialLoad(false);
       }
     } catch (error) {
-      console.error('Error fetching logs:', error);
-      setError(`Error fetching logs: ${error}`);
+      console.error('获取日志时出错:', error);
+      setError(`获取日志时出错: ${error}`);
     }
-  };
+  }, [logPath, filter, level, startDateTime, endDateTime, isInitialLoad, parseTimestamp]);
 
-  const selectLogFile = async () => {
+  const selectLogFile = useCallback(async () => {
     const selected = await open({
       multiple: false,
-      filters: [{ name: 'Log Files', extensions: ['log', 'txt'] }]
+      filters: [{ name: '日志文件', extensions: ['log', 'txt'] }]
     });
     if (selected && typeof selected === 'string') {
       setLogPath(selected);
@@ -202,22 +229,38 @@ const LogViewer: React.FC = () => {
       setEndDateTime('');
       setIsInitialLoad(true);
     }
-  };
+  }, []);
 
-  const resetToDefault = () => {
+  const resetToDefault = useCallback(() => {
     setFilter('');
     setLevel('All');
     setStartDateTime('');
     setEndDateTime('');
     setIsInitialLoad(true);
     fetchLogs();
-  };
+  }, [fetchLogs]);
 
-  const formatDateTime = (dateTime: string): string => {
+  const clearCache = useCallback(() => {
+    localStorage.removeItem('logViewerLogs');
+    localStorage.removeItem('logViewerFilter');
+    localStorage.removeItem('logViewerLevel');
+    localStorage.removeItem('logViewerStartDateTime');
+    localStorage.removeItem('logViewerEndDateTime');
+    localStorage.removeItem('logViewerLogPath');
+    setLogs([]);
+    setFilter('');
+    setLevel('All');
+    setStartDateTime('');
+    setEndDateTime('');
+    setLogPath('');
+    setIsInitialLoad(true);
+  }, []);
+
+  const formatDateTime = useCallback((dateTime: string): string => {
     return moment(dateTime).format('YYYY-MM-DD HH:mm:ss');
-  };
+  }, []);
 
-  const highlightJson = (content: string) => {
+  const highlightJson = useCallback((content: string) => {
     const parts = content.split(/(\{.*?\})/g);
     return parts.map((part, index) => {
       if (part.startsWith('{') && part.endsWith('}')) {
@@ -225,9 +268,9 @@ const LogViewer: React.FC = () => {
       }
       return <span key={index}>{part}</span>;
     });
-  };
+  }, []);
 
-  const renderLogLine = (line: string) => {
+  const renderLogLine = useCallback((line: string) => {
     const [timestamp, level, ...rest] = line.split(' ');
     const content = rest.join(' ');
     return (
@@ -237,7 +280,19 @@ const LogViewer: React.FC = () => {
         {highlightJson(content)}
       </LogLine>
     );
-  };
+  }, [highlightJson]);
+
+  const filteredLogs = useMemo(() => {
+    return logs.filter(log => {
+      if (filter && !log.toLowerCase().includes(filter.toLowerCase())) {
+        return false;
+      }
+      if (level !== 'All' && !log.includes(`[${level}]`)) {
+        return false;
+      }
+      return true;
+    });
+  }, [logs, filter, level]);
 
   return (
     <LogViewerContainer>
@@ -245,12 +300,12 @@ const LogViewer: React.FC = () => {
         <StyledButton onClick={selectLogFile}>选择日志文件</StyledButton>
         <StyledInput
           type="text"
-          placeholder="Filter logs"
+          placeholder="过滤日志"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         />
         <StyledSelect value={level} onChange={(e) => setLevel(e.target.value)}>
-          <option value="All">All Levels</option>
+          <option value="All">所有级别</option>
           <option value="Debug">Debug</option>
           <option value="Info">Info</option>
           <option value="Warning">Warning</option>
@@ -259,17 +314,18 @@ const LogViewer: React.FC = () => {
         <StyledDateTimeInput
           type="datetime-local"
           value={startDateTime}
-          onChange={(e) => setStartDateTime(moment.tz(e.target.value, 'Asia/Shanghai').format('YYYY-MM-DDTHH:mm:ss'))}
+          onChange={(e) => setStartDateTime(e.target.value)}
           step="1"
         />
         <StyledDateTimeInput
           type="datetime-local"
           value={endDateTime}
-          onChange={(e) => setEndDateTime(moment.tz(e.target.value, 'Asia/Shanghai').format('YYYY-MM-DDTHH:mm:ss'))}
+          onChange={(e) => setEndDateTime(e.target.value)}
           step="1"
         />
         <StyledButton onClick={fetchLogs}>刷新</StyledButton>
         <StyledButton onClick={resetToDefault}>重置</StyledButton>
+        <StyledButton onClick={clearCache}>清除缓存</StyledButton>
       </ControlPanel>
       {logPath && (
         <LogInfo>
@@ -283,7 +339,7 @@ const LogViewer: React.FC = () => {
       )}
       {error && <div style={{ color: 'red', padding: '10px' }}>{error}</div>}
       <LogDisplay>
-        {logs.map((log, index) => (
+        {filteredLogs.map((log, index) => (
           <React.Fragment key={index}>
             {renderLogLine(log)}
           </React.Fragment>

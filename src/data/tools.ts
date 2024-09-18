@@ -9,4 +9,11 @@ export const tools: Tool[] = [
     subtype: '日志工具',
     component: LogViewer,
   },
+  {
+    id: '1',
+    name: '日志查看器2',
+    type: '开发工具',
+    subtype: '日志工具',
+    component: LogViewer,
+  },
 ];

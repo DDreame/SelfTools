@@ -544,11 +544,13 @@ name = "ddreametools"
 version = "0.0.1"
 dependencies = [
  "chrono",
+ "lazy_static",
  "regex",
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
+ "tempfile",
 ]
 
 [[package]]
