@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { open } from '@tauri-apps/api/dialog';
-import styled from 'styled-components';
 import debounce from 'lodash/debounce';
 import moment from 'moment-timezone';
 import {
