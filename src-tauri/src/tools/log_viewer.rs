@@ -6,7 +6,7 @@ use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use tauri::command;
 
 const MAX_READ_SIZE: u64 = 1024 * 1024; // 1MB
-const MAX_LOGS: usize = 10000; // 最大返回日志行数
+pub const MAX_LOGS: usize = 10000; // 最大返回日志行数
 
 lazy_static! {
     static ref TIMESTAMP_REGEX: Regex = Regex::new(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}").unwrap();
@@ -47,7 +47,7 @@ pub fn fetch_logs(
     Ok(logs)
 }
 
-fn parse_date_time(date_time: &str) -> Result<Option<DateTime<FixedOffset>>, String> {
+pub fn parse_date_time(date_time: &str) -> Result<Option<DateTime<FixedOffset>>, String> {
     if date_time.is_empty() {
         Ok(None)
     } else {
@@ -57,7 +57,7 @@ fn parse_date_time(date_time: &str) -> Result<Option<DateTime<FixedOffset>>, Str
     }
 }
 
-fn filter_log(
+pub fn filter_log(
     line: &str,
     filter: &str,
     level: &str,

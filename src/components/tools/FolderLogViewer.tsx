@@ -4,143 +4,34 @@ import { open } from '@tauri-apps/api/dialog';
 import styled from 'styled-components';
 import debounce from 'lodash/debounce';
 import moment from 'moment-timezone';
+import {
+  LogViewerContainer,
+  ControlPanel,
+  LogContent,
+  LogInfo,
+  LogDisplay,
+  StyledInput,
+  StyledSelect,
+  StyledButton,
+  StyledDateTimeInput,
+  LogLine,
+  TimeStamp,
+  LogLevel,
+  JsonContent,
+} from './LogViewer'; // 导入共享的样式组件
 
-export const LogViewerContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  background-color: ${props => props.theme.background};
-  color: ${props => props.theme.text};
-`;
+const MAX_STORED_LOGS = 10000;
 
-export const ControlPanel = styled.div`
-  flex-shrink: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 10px;
-  background-color: ${props => props.theme.secondary};
-  border-bottom: 1px solid ${props => props.theme.border};
-`;
-
-export const LogContent = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-`;
-
-export const LogInfo = styled.div`
-  flex-shrink: 0;
-  padding: 10px;
-  background-color: ${props => props.theme.secondary};
-  border-bottom: 1px solid ${props => props.theme.border};
-`;
-
-export const LogDisplay = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  background-color: ${props => props.theme.logBackground};
-  color: ${props => props.theme.logText};
-  padding: 10px;
-  font-family: monospace;
-  font-size: 0.9em;
-  margin: 0;
-
-  &::-webkit-scrollbar {
-    width: 16px;  // 增加滚动条宽度
-  }
-
-  &::-webkit-scrollbar-track {
-    background: ${props => props.theme.scrollbarTrack};
-    border-radius: 8px;  // 添加圆角
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background-color: ${props => props.theme.scrollbarThumb};
-    border-radius: 8px;  // 增加圆角
-    border: 4px solid ${props => props.theme.scrollbarTrack};  // 增加边框宽度
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background-color: ${props => props.theme.scrollbarThumbHover};
-  }
-`;
-
-export const StyledInput = styled.input`
-  padding: 5px;
-  border: 1px solid ${props => props.theme.border};
-  border-radius: 4px;
-  background-color: ${props => props.theme.background};
-  color: ${props => props.theme.text};
-`;
-
-export const StyledSelect = styled.select`
-  padding: 5px;
-  border: 1px solid ${props => props.theme.border};
-  border-radius: 4px;
-  background-color: ${props => props.theme.background};
-  color: ${props => props.theme.text};
-`;
-
-export const StyledButton = styled.button`
-  padding: 5px 10px;
-  background-color: ${props => props.theme.primary};
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  &:hover {
-    background-color: ${props => props.theme.primary}dd;
-  }
-`;
-
-export const StyledDateTimeInput = styled.input`
-  padding: 5px;
-  border: 1px solid ${props => props.theme.border};
-  border-radius: 4px;
-  background-color: ${props => props.theme.background};
-  color: ${props => props.theme.text};
-`;
-
-export const LogLine = styled.div`
-  margin-bottom: 5px;
-`;
-
-export const TimeStamp = styled.span`
-  color: ${props => props.theme.primary};
-`;
-
-export const LogLevel = styled.span<{ level: string }>`
-  font-weight: bold;
-  color: ${props => {
-    switch (props.level) {
-      case 'Debug': return '#808080';
-      case 'Info': return '#0000FF';
-      case 'Warning': return '#FFA500';
-      case 'Error': return '#FF0000';
-      default: return props.theme.text;
-    }
-  }};
-`;
-
-export const JsonContent = styled.span`
-  color: ${props => props.theme.jsonColor};
-`;
-
-const MAX_STORED_LOGS = 10000; // 限制存储的日志数量
-
-const LogViewer: React.FC = () => {
+const FolderLogViewer: React.FC = () => {
   const [logs, setLogs] = useState<string[]>(() => {
-    const savedLogs = localStorage.getItem('logViewerLogs');
+    const savedLogs = localStorage.getItem('folderLogViewerLogs');
     return savedLogs ? JSON.parse(savedLogs) : [];
   });
-  const [filter, setFilter] = useState(() => localStorage.getItem('logViewerFilter') || '');
-  const [level, setLevel] = useState(() => localStorage.getItem('logViewerLevel') || 'All');
-  const [startDateTime, setStartDateTime] = useState(() => localStorage.getItem('logViewerStartDateTime') || '');
-  const [endDateTime, setEndDateTime] = useState(() => localStorage.getItem('logViewerEndDateTime') || '');
-  const [logPath, setLogPath] = useState(() => localStorage.getItem('logViewerLogPath') || '');
+  const [filter, setFilter] = useState(() => localStorage.getItem('folderLogViewerFilter') || '');
+  const [level, setLevel] = useState(() => localStorage.getItem('folderLogViewerLevel') || 'All');
+  const [startDateTime, setStartDateTime] = useState(() => localStorage.getItem('folderLogViewerStartDateTime') || '');
+  const [endDateTime, setEndDateTime] = useState(() => localStorage.getItem('folderLogViewerEndDateTime') || '');
+  const [folderPath, setFolderPath] = useState(() => localStorage.getItem('folderLogViewerFolderPath') || '');
   const [error, setError] = useState<string | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
@@ -148,40 +39,40 @@ const LogViewer: React.FC = () => {
     debounce(() => {
       fetchLogs();
     }, 300),
-    [logPath, filter, level, startDateTime, endDateTime]
+    [folderPath, filter, level, startDateTime, endDateTime]
   );
 
   useEffect(() => {
-    if (logPath) {
+    if (folderPath) {
       debouncedFetchLogs();
       const interval = setInterval(debouncedFetchLogs, 5000);
       return () => clearInterval(interval);
     }
-  }, [logPath, filter, level, startDateTime, endDateTime, debouncedFetchLogs]);
+  }, [folderPath, filter, level, startDateTime, endDateTime, debouncedFetchLogs]);
 
   useEffect(() => {
-    localStorage.setItem('logViewerLogs', JSON.stringify(logs.slice(-MAX_STORED_LOGS)));
+    localStorage.setItem('folderLogViewerLogs', JSON.stringify(logs.slice(-MAX_STORED_LOGS)));
   }, [logs]);
 
   useEffect(() => {
-    localStorage.setItem('logViewerFilter', filter);
+    localStorage.setItem('folderLogViewerFilter', filter);
   }, [filter]);
 
   useEffect(() => {
-    localStorage.setItem('logViewerLevel', level);
+    localStorage.setItem('folderLogViewerLevel', level);
   }, [level]);
 
   useEffect(() => {
-    localStorage.setItem('logViewerStartDateTime', startDateTime);
+    localStorage.setItem('folderLogViewerStartDateTime', startDateTime);
   }, [startDateTime]);
 
   useEffect(() => {
-    localStorage.setItem('logViewerEndDateTime', endDateTime);
+    localStorage.setItem('folderLogViewerEndDateTime', endDateTime);
   }, [endDateTime]);
 
   useEffect(() => {
-    localStorage.setItem('logViewerLogPath', logPath);
-  }, [logPath]);
+    localStorage.setItem('folderLogViewerFolderPath', folderPath);
+  }, [folderPath]);
 
   const parseTimestamp = useCallback((timestamp: string): string | null => {
     const date = moment.tz(timestamp, 'YYYY-MM-DD HH:mm:ss', 'Asia/Shanghai');
@@ -193,11 +84,11 @@ const LogViewer: React.FC = () => {
   }, []);
 
   const fetchLogs = useCallback(async () => {
-    if (!logPath) return;
+    if (!folderPath) return;
     try {
       setError(null);
-      const result = await invoke('fetch_logs', {
-        logPath,
+      const result = await invoke('fetch_folder_logs', {
+        folderPath,
         filter,
         level,
         startDateTime: startDateTime ? moment.tz(startDateTime, 'Asia/Shanghai').toISOString(true) : '',
@@ -225,15 +116,15 @@ const LogViewer: React.FC = () => {
       console.error('获取日志时出错:', error);
       setError(`获取日志时出错: ${error}`);
     }
-  }, [logPath, filter, level, startDateTime, endDateTime, isInitialLoad, parseTimestamp]);
+  }, [folderPath, filter, level, startDateTime, endDateTime, isInitialLoad, parseTimestamp]);
 
-  const selectLogFile = useCallback(async () => {
+  const selectLogFolder = useCallback(async () => {
     const selected = await open({
+      directory: true,
       multiple: false,
-      filters: [{ name: '日志文件', extensions: ['log', 'txt'] }]
     });
     if (selected && typeof selected === 'string') {
-      setLogPath(selected);
+      setFolderPath(selected);
       setStartDateTime('');
       setEndDateTime('');
       setIsInitialLoad(true);
@@ -250,18 +141,18 @@ const LogViewer: React.FC = () => {
   }, [fetchLogs]);
 
   const clearCache = useCallback(() => {
-    localStorage.removeItem('logViewerLogs');
-    localStorage.removeItem('logViewerFilter');
-    localStorage.removeItem('logViewerLevel');
-    localStorage.removeItem('logViewerStartDateTime');
-    localStorage.removeItem('logViewerEndDateTime');
-    localStorage.removeItem('logViewerLogPath');
+    localStorage.removeItem('folderLogViewerLogs');
+    localStorage.removeItem('folderLogViewerFilter');
+    localStorage.removeItem('folderLogViewerLevel');
+    localStorage.removeItem('folderLogViewerStartDateTime');
+    localStorage.removeItem('folderLogViewerEndDateTime');
+    localStorage.removeItem('folderLogViewerFolderPath');
     setLogs([]);
     setFilter('');
     setLevel('All');
     setStartDateTime('');
     setEndDateTime('');
-    setLogPath('');
+    setFolderPath('');
     setIsInitialLoad(true);
   }, []);
 
@@ -302,10 +193,11 @@ const LogViewer: React.FC = () => {
       return true;
     });
   }, [logs, filter, level]);
+
   return (
     <LogViewerContainer>
       <ControlPanel>
-        <StyledButton onClick={selectLogFile}>选择日志文件</StyledButton>
+        <StyledButton onClick={selectLogFolder}>选择日志文件夹</StyledButton>
         <StyledInput
           type="text"
           placeholder="过滤日志"
@@ -336,9 +228,9 @@ const LogViewer: React.FC = () => {
         <StyledButton onClick={clearCache}>清除缓存</StyledButton>
       </ControlPanel>
       <LogContent>
-        {logPath && (
+        {folderPath && (
           <LogInfo>
-            <div>当前日志文件：{logPath}</div>
+            <div>当前日志文件夹：{folderPath}</div>
             {startDateTime && endDateTime && (
               <div>
                 日志时间范围：{formatDateTime(startDateTime)} - {formatDateTime(endDateTime)}
@@ -359,4 +251,4 @@ const LogViewer: React.FC = () => {
   );
 };
 
-export default LogViewer;
+export default FolderLogViewer;

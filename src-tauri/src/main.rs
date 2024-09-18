@@ -18,7 +18,7 @@ fn main() {
             }
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![fetch_logs])
+        .invoke_handler(tauri::generate_handler![fetch_folder_logs, fetch_logs])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
