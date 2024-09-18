@@ -151,7 +151,7 @@ const LogViewer: React.FC = () => {
       console.error(`Invalid timestamp: ${timestamp}`);
       return null;
     }
-    return date.format('YYYY-MM-DDTHH:mm');
+    return date.format('YYYY-MM-DDTHH:mm:ss');
   };
 
   const fetchLogs = async () => {
@@ -162,8 +162,8 @@ const LogViewer: React.FC = () => {
         logPath,
         filter,
         level,
-        startDateTime: startDateTime ? moment.tz(startDateTime, 'Asia/Shanghai').toISOString() : '',
-        endDateTime: endDateTime ? moment.tz(endDateTime, 'Asia/Shanghai').toISOString() : ''
+        startDateTime: startDateTime ? moment.tz(startDateTime, 'Asia/Shanghai').toISOString(true) : '',
+        endDateTime: endDateTime ? moment.tz(endDateTime, 'Asia/Shanghai').toISOString(true) : ''
       });
       const fetchedLogs = result as string[];
       setLogs(fetchedLogs);
@@ -257,12 +257,16 @@ const LogViewer: React.FC = () => {
           <option value="Error">Error</option>
         </StyledSelect>
         <StyledDateTimeInput
+          type="datetime-local"
           value={startDateTime}
-          onChange={(e) => setStartDateTime(e.target.value)}
+          onChange={(e) => setStartDateTime(moment.tz(e.target.value, 'Asia/Shanghai').format('YYYY-MM-DDTHH:mm:ss'))}
+          step="1"
         />
         <StyledDateTimeInput
+          type="datetime-local"
           value={endDateTime}
-          onChange={(e) => setEndDateTime(e.target.value)}
+          onChange={(e) => setEndDateTime(moment.tz(e.target.value, 'Asia/Shanghai').format('YYYY-MM-DDTHH:mm:ss'))}
+          step="1"
         />
         <StyledButton onClick={fetchLogs}>刷新</StyledButton>
         <StyledButton onClick={resetToDefault}>重置</StyledButton>

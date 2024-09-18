@@ -1,4 +1,5 @@
-use chrono::{DateTime, FixedOffset, NaiveDateTime, Utc};
+use chrono::Utc;
+use chrono::{DateTime, FixedOffset, NaiveDateTime, TimeZone};
 use regex::Regex;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
@@ -38,7 +39,8 @@ pub fn fetch_logs(
     let start_date_time = if !start_date_time.is_empty() {
         Some(
             DateTime::parse_from_rfc3339(&start_date_time)
-                .map_err(|e| format!("无效的开始时间: {}", e))?,
+                .map_err(|e| format!("无效的开始时间: {}", e))?
+                .with_timezone(&china_offset),
         )
     } else {
         None
@@ -47,7 +49,10 @@ pub fn fetch_logs(
     let end_date_time = if !end_date_time.is_empty() {
         Some(
             DateTime::parse_from_rfc3339(&end_date_time)
-                .map_err(|e| format!("无效的结束时间: {}", e))?,
+                .map_err(|e| format!("无效的结束时间: {}", e))?
+                .with_timezone(&china_offset)
+                .checked_add_signed(chrono::Duration::seconds(1))
+                .unwrap_or_else(|| china_offset.from_utc_datetime(&Utc::now().naive_utc())),
         )
     } else {
         None
@@ -75,11 +80,11 @@ pub fn fetch_logs(
                 if let Some(timestamp_str) = timestamp_regex.find(line) {
                     let log_date =
                         NaiveDateTime::parse_from_str(timestamp_str.as_str(), "%Y-%m-%d %H:%M:%S")
-                            .map(|dt| {
-                                DateTime::<FixedOffset>::from_naive_utc_and_offset(dt, china_offset)
-                            })
-                            .unwrap_or_else(|_| Utc::now().with_timezone(&china_offset));
-                    return log_date >= start && log_date <= end;
+                            .map(|dt| china_offset.from_local_datetime(&dt).unwrap())
+                            .unwrap_or_else(|_| {
+                                china_offset.from_utc_datetime(&Utc::now().naive_utc())
+                            });
+                    return log_date >= start && log_date < end;
                 }
                 return false;
             }
