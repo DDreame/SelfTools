@@ -1,5 +1,13 @@
 import React from 'react';
+import styled from 'styled-components';
 import { Tool } from '../types';
+
+const ToolDetailContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+`;
 
 interface ToolDetailProps {
   tool: Tool | null;
@@ -7,16 +15,16 @@ interface ToolDetailProps {
 
 const ToolDetail: React.FC<ToolDetailProps> = ({ tool }) => {
   if (!tool) {
-    return <div className="tool-detail">请选择一个工具</div>;
+    return <ToolDetailContainer>请选择一个工具</ToolDetailContainer>;
   }
 
   const ToolComponent = tool.component;
 
   return (
-    <div className="tool-detail">
+    <ToolDetailContainer>
       <h2>{tool.name}</h2>
       <ToolComponent />
-    </div>
+    </ToolDetailContainer>
   );
 };
 

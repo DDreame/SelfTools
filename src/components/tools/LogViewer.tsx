@@ -15,10 +15,24 @@ const LogViewerContainer = styled.div`
 `;
 
 const ControlPanel = styled.div`
+  flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 10px;
+  padding: 10px;
+  background-color: ${props => props.theme.secondary};
+  border-bottom: 1px solid ${props => props.theme.border};
+`;
+
+const LogContent = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`;
+
+const LogInfo = styled.div`
+  flex-shrink: 0;
   padding: 10px;
   background-color: ${props => props.theme.secondary};
   border-bottom: 1px solid ${props => props.theme.border};
@@ -35,17 +49,18 @@ const LogDisplay = styled.div`
   margin: 0;
 
   &::-webkit-scrollbar {
-    width: 12px;
+    width: 16px;  // 增加滚动条宽度
   }
 
   &::-webkit-scrollbar-track {
     background: ${props => props.theme.scrollbarTrack};
+    border-radius: 8px;  // 添加圆角
   }
 
   &::-webkit-scrollbar-thumb {
     background-color: ${props => props.theme.scrollbarThumb};
-    border-radius: 6px;
-    border: 3px solid ${props => props.theme.scrollbarTrack};
+    border-radius: 8px;  // 增加圆角
+    border: 4px solid ${props => props.theme.scrollbarTrack};  // 增加边框宽度
   }
 
   &::-webkit-scrollbar-thumb:hover {
@@ -87,12 +102,6 @@ const StyledDateTimeInput = styled.input`
   border-radius: 4px;
   background-color: ${props => props.theme.background};
   color: ${props => props.theme.text};
-`;
-
-const LogInfo = styled.div`
-  padding: 10px;
-  background-color: ${props => props.theme.secondary};
-  border-bottom: 1px solid ${props => props.theme.border};
 `;
 
 const LogLine = styled.div`
@@ -293,7 +302,6 @@ const LogViewer: React.FC = () => {
       return true;
     });
   }, [logs, filter, level]);
-
   return (
     <LogViewerContainer>
       <ControlPanel>
@@ -327,24 +335,26 @@ const LogViewer: React.FC = () => {
         <StyledButton onClick={resetToDefault}>重置</StyledButton>
         <StyledButton onClick={clearCache}>清除缓存</StyledButton>
       </ControlPanel>
-      {logPath && (
-        <LogInfo>
-          <div>当前日志文件：{logPath}</div>
-          {startDateTime && endDateTime && (
-            <div>
-              日志时间范围：{formatDateTime(startDateTime)} - {formatDateTime(endDateTime)}
-            </div>
-          )}
-        </LogInfo>
-      )}
-      {error && <div style={{ color: 'red', padding: '10px' }}>{error}</div>}
-      <LogDisplay>
-        {filteredLogs.map((log, index) => (
-          <React.Fragment key={index}>
-            {renderLogLine(log)}
-          </React.Fragment>
-        ))}
-      </LogDisplay>
+      <LogContent>
+        {logPath && (
+          <LogInfo>
+            <div>当前日志文件：{logPath}</div>
+            {startDateTime && endDateTime && (
+              <div>
+                日志时间范围：{formatDateTime(startDateTime)} - {formatDateTime(endDateTime)}
+              </div>
+            )}
+          </LogInfo>
+        )}
+        {error && <div style={{ color: 'red', padding: '10px' }}>{error}</div>}
+        <LogDisplay>
+          {filteredLogs.map((log, index) => (
+            <React.Fragment key={index}>
+              {renderLogLine(log)}
+            </React.Fragment>
+          ))}
+        </LogDisplay>
+      </LogContent>
     </LogViewerContainer>
   );
 };
