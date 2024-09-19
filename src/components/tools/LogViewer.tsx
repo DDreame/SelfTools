@@ -206,17 +206,17 @@ const LogViewer: React.FC = () => {
       const fetchedLogs = result as string[];
       setLogs(fetchedLogs);
 
-      if (fetchedLogs.length > 0 && isInitialLoad) {
+      if (fetchedLogs.length > 0) {
         const firstLog = fetchedLogs[0];
         const lastLog = fetchedLogs[fetchedLogs.length - 1];
 
         const firstTimestamp = parseTimestamp(firstLog.split(' ').slice(0, 2).join(' '));
         const lastTimestamp = parseTimestamp(lastLog.split(' ').slice(0, 2).join(' '));
 
-        if (firstTimestamp) {
+        if (firstTimestamp && (isInitialLoad || firstTimestamp < startDateTime)) {
           setStartDateTime(firstTimestamp);
         }
-        if (lastTimestamp) {
+        if (lastTimestamp && (isInitialLoad || lastTimestamp > endDateTime)) {
           setEndDateTime(lastTimestamp);
         }
         setIsInitialLoad(false);
@@ -226,6 +226,7 @@ const LogViewer: React.FC = () => {
       setError(`获取日志时出错: ${error}`);
     }
   }, [logPath, filter, level, startDateTime, endDateTime, isInitialLoad, parseTimestamp]);
+
 
   const selectLogFile = useCallback(async () => {
     const selected = await open({
@@ -331,8 +332,7 @@ const LogViewer: React.FC = () => {
           onChange={(e) => setEndDateTime(e.target.value)}
           step="1"
         />
-        <StyledButton onClick={fetchLogs}>刷新</StyledButton>
-        <StyledButton onClick={resetToDefault}>重置</StyledButton>
+        <StyledButton onClick={resetToDefault}>重置过滤器</StyledButton>
         <StyledButton onClick={clearCache}>清除缓存</StyledButton>
       </ControlPanel>
       <LogContent>
