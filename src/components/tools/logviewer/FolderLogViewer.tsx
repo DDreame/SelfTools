@@ -4,20 +4,20 @@ import { open } from '@tauri-apps/api/dialog';
 import debounce from 'lodash/debounce';
 import moment from 'moment-timezone';
 import {
-  LogViewerContainer,
-  ControlPanel,
-  LogContent,
-  LogInfo,
-  LogDisplay,
-  StyledInput,
-  StyledSelect,
-  StyledButton,
-  StyledDateTimeInput,
-  LogLine,
-  TimeStamp,
-  LogLevel,
-  JsonContent,
-} from './LogViewer'; // 导入共享的样式组件
+    LogViewerContainer,
+    ControlPanel,
+    LogContent,
+    LogInfo,
+    LogDisplay,
+    StyledInput,
+    StyledSelect,
+    StyledButton,
+    StyledDateTimeInput,
+    JsonContent,
+    LogLine,
+    TimeStamp,
+    LogLevel
+  } from './logUtil'; // 导入共享的样式组件
 
 const MAX_STORED_LOGS = 10000;
 
@@ -96,17 +96,17 @@ const FolderLogViewer: React.FC = () => {
       const fetchedLogs = result as string[];
       setLogs(fetchedLogs);
 
-      if (fetchedLogs.length > 0 && isInitialLoad) {
+      if (fetchedLogs.length > 0) {
         const firstLog = fetchedLogs[0];
         const lastLog = fetchedLogs[fetchedLogs.length - 1];
 
         const firstTimestamp = parseTimestamp(firstLog.split(' ').slice(0, 2).join(' '));
         const lastTimestamp = parseTimestamp(lastLog.split(' ').slice(0, 2).join(' '));
 
-        if (firstTimestamp) {
+        if (firstTimestamp && (isInitialLoad || firstTimestamp < startDateTime)) {
           setStartDateTime(firstTimestamp);
         }
-        if (lastTimestamp) {
+        if (lastTimestamp && (isInitialLoad || lastTimestamp > endDateTime)) {
           setEndDateTime(lastTimestamp);
         }
         setIsInitialLoad(false);
@@ -116,6 +116,7 @@ const FolderLogViewer: React.FC = () => {
       setError(`获取日志时出错: ${error}`);
     }
   }, [folderPath, filter, level, startDateTime, endDateTime, isInitialLoad, parseTimestamp]);
+
 
   const selectLogFolder = useCallback(async () => {
     const selected = await open({
@@ -222,8 +223,7 @@ const FolderLogViewer: React.FC = () => {
           onChange={(e) => setEndDateTime(e.target.value)}
           step="1"
         />
-        <StyledButton onClick={fetchLogs}>刷新</StyledButton>
-        <StyledButton onClick={resetToDefault}>重置</StyledButton>
+        <StyledButton onClick={resetToDefault}>重置过滤器</StyledButton>
         <StyledButton onClick={clearCache}>清除缓存</StyledButton>
       </ControlPanel>
       <LogContent>

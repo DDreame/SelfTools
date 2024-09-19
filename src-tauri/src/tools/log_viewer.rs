@@ -15,13 +15,13 @@ lazy_static! {
 
 #[command]
 pub fn fetch_logs(
-    log_path: String,
+    path: String,
     filter: String,
     level: String,
     start_date_time: String,
     end_date_time: String,
 ) -> Result<Vec<String>, String> {
-    let file = File::open(&log_path).map_err(|e| format!("无法打开日志文件: {}", e))?;
+    let file = File::open(&path).map_err(|e| format!("无法打开日志文件: {}", e))?;
     let file_size = file
         .metadata()
         .map_err(|e| format!("无法获取文件元数据: {}", e))?
