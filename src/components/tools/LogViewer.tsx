@@ -129,8 +129,6 @@ export const JsonContent = styled.span`
   color: ${props => props.theme.jsonColor};
 `;
 
-const MAX_STORED_LOGS = 10000; // 限制存储的日志数量
-
 const LogViewer: React.FC = () => {
   const [logs, setLogs] = useState<string[]>(() => {
     const savedLogs = localStorage.getItem('logViewerLogs');
@@ -160,7 +158,7 @@ const LogViewer: React.FC = () => {
   }, [logPath, filter, level, startDateTime, endDateTime, debouncedFetchLogs]);
 
   useEffect(() => {
-    localStorage.setItem('logViewerLogs', JSON.stringify(logs.slice(-MAX_STORED_LOGS)));
+    localStorage.setItem('logViewerLogs', JSON.stringify(logs));
   }, [logs]);
 
   useEffect(() => {
