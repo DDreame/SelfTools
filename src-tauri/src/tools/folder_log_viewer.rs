@@ -1,4 +1,4 @@
-use super::log_viewer::{filter_log, parse_date_time, MAX_LOGS};
+use super::log_viewer::{filter_log, parse_date_time};
 use chrono::{DateTime, FixedOffset, Utc};
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
@@ -35,7 +35,6 @@ pub fn fetch_folder_logs(
         .lines()
         .map_while(Result::ok)
         .filter(|line| filter_log(line, &filter, &level, start_date_time, end_date_time))
-        .take(MAX_LOGS)
         .collect();
 
     Ok(logs)

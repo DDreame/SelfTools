@@ -5,8 +5,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use tauri::command;
 
-const MAX_READ_SIZE: u64 = 1024 * 1024; // 1MB
-pub const MAX_LOGS: usize = 10000; // 最大返回日志行数
+const MAX_READ_SIZE: u64 = 2 * 1024 * 1024; // 1MB
 
 lazy_static! {
     static ref TIMESTAMP_REGEX: Regex = Regex::new(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}").unwrap();
@@ -41,7 +40,6 @@ pub fn fetch_logs(
         .lines()
         .map_while(Result::ok)
         .filter(|line| filter_log(line, &filter, &level, start_date_time, end_date_time))
-        .take(MAX_LOGS)
         .collect();
 
     Ok(logs)
