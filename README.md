@@ -1,7 +1,54 @@
-# Tauri + React + Typescript
+# 开发者工具箱 - Tauri + React + TypeScript
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+这个项目旨在创建一个轻量级的开发者工具箱,使用Tauri、React和TypeScript构建。
 
-## Recommended IDE Setup
+## 项目概述
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+这个开发者工具箱集成了多种常用的小工具,旨在提高开发效率。主要功能包括:
+
+1. 文本处理工具
+   - [ ] Base64 编码/解码
+   - [ ] URL 编码/解码
+   - [ ] JSON 格式化和验证
+   - [ ] XML 格式化
+   - [ ] Markdown 预览
+
+2. 开发辅助工具
+   - [ ] 日志检查器(开发中)
+   - [ ] 正则表达式测试器
+   - [ ] 颜色选择器和转换器
+   - [ ] 时间戳转换器
+   - [ ] UUID 生成器
+   - [ ] 哈希计算器
+
+3. 网络工具
+   - [ ] IP 地址查询
+   - [ ] 端口扫描器
+   - [ ] DNS 查询工具
+   - [ ] 简单的HTTP请求测试器
+
+4. 开发者计算工具
+   - [ ] 单位转换
+   - [ ] 进制转换(二进制、十进制、十六进制)
+   - [ ] CIDR计算器
+
+5. 文件工具
+   - [ ] 文件哈希计算
+   - [ ] 文本比较工具
+   - [ ] 文件大小计算器
+
+6. 密码相关工具
+   - [ ] 随机密码生成器
+   - [ ] 密码强度检查器
+
+7. 代码片段管理
+   - [ ] 代码片段存储
+
+8. 其他实用工具
+   - [ ] 简单的笔记功能
+   - [ ] 待办事项列表
+
+注:
+- [x] 表示功能已完成
+- [ ] 表示功能未开始或进行中
+- (开发中) 表示该功能正在积极开发中
