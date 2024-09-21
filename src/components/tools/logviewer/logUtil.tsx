@@ -123,16 +123,16 @@ export const LogViewerContainer = styled.div`
 `;
 
 export const parseTimestamp = (timestamp: string): string | null => {
-  const date = moment.tz(timestamp, 'YYYY-MM-DD HH:mm:ss', 'Asia/Shanghai');
+  const date = moment.tz(timestamp, 'YYYY-MM-DD HH:mm:ss SSS', 'Asia/Shanghai');
   if (!date.isValid()) {
     console.error(`无效的时间戳: ${timestamp}`);
     return null;
   }
-  return date.format('YYYY-MM-DDTHH:mm:ss');
+  return date.format('YYYY-MM-DDTHH:mm:ss.SSS');
 };
 
 export const formatDateTime = (dateTime: string): string => {
-  return moment(dateTime).format('YYYY-MM-DD HH:mm:ss');
+  return moment(dateTime).format('YYYY-MM-DD HH:mm:ss.SSS');
 };
 
 export const highlightJson = (content: string) => {
@@ -151,13 +151,16 @@ export const JsonContent = styled.span`
 `;
 
 export const renderLogLine = (line: string) => {
-  const [timestamp, level, ...rest] = line.split(' ');
-  const content = rest.join(' ');
-  return (
-    <LogLine>
-      <TimeStamp>{timestamp}</TimeStamp>{' '}
-      <LogLevel level={level}>{level}</LogLevel>:{' '}
-      {highlightJson(content)}
-    </LogLine>
-  );
+  const match = line.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3}):(\[(Debug|Info|Warning|Error)\]:)(.*)$/);
+  if (match) {
+    const [, timestamp, level, , content] = match;
+    return (
+      <LogLine>
+        <TimeStamp>{timestamp}</TimeStamp>{' '}
+        <LogLevel level={level}>{level}</LogLevel>{' '}
+        {highlightJson(content)}
+      </LogLine>
+    );
+  }
+  return <LogLine>{line}</LogLine>;
 };

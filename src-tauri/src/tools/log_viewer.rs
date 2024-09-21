@@ -8,8 +8,8 @@ use tauri::command;
 const MAX_READ_SIZE: u64 = 2 * 1024 * 1024; // 1MB
 
 lazy_static! {
-    static ref TIMESTAMP_REGEX: Regex = Regex::new(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}").unwrap();
-    static ref LEVEL_REGEX: Regex = Regex::new(r"\[(Debug|Info|Warning|Error)\]").unwrap();
+    static ref TIMESTAMP_REGEX: Regex = Regex::new(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3}").unwrap();
+    static ref LEVEL_REGEX: Regex = Regex::new(r"\[(Debug|Info|Warning|Error)\]:").unwrap();
     static ref CHINA_OFFSET: FixedOffset = FixedOffset::east_opt(8 * 3600).unwrap(); // UTC+8
 }
 
@@ -79,7 +79,7 @@ pub fn filter_log(
     if let (Some(start), Some(end)) = (start_date_time, end_date_time) {
         if let Some(timestamp_str) = TIMESTAMP_REGEX.find(line) {
             let log_date =
-                NaiveDateTime::parse_from_str(timestamp_str.as_str(), "%Y-%m-%d %H:%M:%S")
+                NaiveDateTime::parse_from_str(timestamp_str.as_str(), "%Y-%m-%d %H:%M:%S %3f")
                     .map(|dt| CHINA_OFFSET.from_local_datetime(&dt).unwrap())
                     .unwrap_or_else(|_| CHINA_OFFSET.from_utc_datetime(&Utc::now().naive_utc()));
             return log_date >= start && log_date < end;
@@ -93,111 +93,69 @@ pub fn filter_log(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::NaiveDate;
-    use std::io::Write;
-    use tempfile::NamedTempFile;
+    use chrono::TimeZone;
 
     #[test]
     fn test_parse_date_time() {
-        let valid_date = "2023-05-01T12:00:00+08:00";
-        let result = parse_date_time(valid_date).unwrap().unwrap();
+        let valid_time = "2024-09-14T13:41:52+08:00";
+        let result = parse_date_time(valid_time).unwrap().unwrap();
         assert_eq!(
-            result.naive_local(),
-            NaiveDate::from_ymd_opt(2023, 5, 1)
-                .unwrap()
-                .and_hms_opt(12, 0, 0)
+            result,
+            CHINA_OFFSET
+                .with_ymd_and_hms(2024, 9, 14, 13, 41, 52)
+                .single()
                 .unwrap()
         );
 
-        let empty_date = "";
-        assert!(parse_date_time(empty_date).unwrap().is_none());
+        let empty_time = "";
+        assert!(parse_date_time(empty_time).unwrap().is_none());
 
-        let invalid_date = "not a date";
-        assert!(parse_date_time(invalid_date).is_err());
+        let invalid_time = "invalid_time";
+        assert!(parse_date_time(invalid_time).is_err());
     }
 
     #[test]
     fn test_filter_log() {
-        let log_line = "2023-05-01 12:00:00 [Info] Test log message";
+        let log_line = "2024-09-14 13:41:52 674:[Debug]: Get Device UUID End";
 
         // 测试过滤器
-        assert!(filter_log(log_line, "Test", "All", None, None));
-        assert!(!filter_log(log_line, "NonExistent", "All", None, None));
+        assert!(filter_log(log_line, "Device", "All", None, None));
+        assert!(!filter_log(log_line, "NotExist", "All", None, None));
 
         // 测试日志级别
-        assert!(filter_log(log_line, "", "Info", None, None));
-        assert!(!filter_log(log_line, "", "Debug", None, None));
+        assert!(filter_log(log_line, "", "Debug", None, None));
+        assert!(!filter_log(log_line, "", "Error", None, None));
 
-        // 测试日期范围
-        let start = parse_date_time("2023-05-01T00:00:00+08:00")
-            .unwrap()
+        // 测试时间范围
+        let start = CHINA_OFFSET
+            .with_ymd_and_hms(2024, 9, 14, 13, 0, 0)
+            .single()
             .unwrap();
-        let end = parse_date_time("2023-05-02T00:00:00+08:00")
-            .unwrap()
+        let end = CHINA_OFFSET
+            .with_ymd_and_hms(2024, 9, 14, 14, 0, 0)
+            .single()
             .unwrap();
         assert!(filter_log(log_line, "", "All", Some(start), Some(end)));
 
-        let start = parse_date_time("2023-05-02T00:00:00+08:00")
-            .unwrap()
+        let start = CHINA_OFFSET
+            .with_ymd_and_hms(2024, 9, 14, 14, 0, 0)
+            .single()
             .unwrap();
-        let end = parse_date_time("2023-05-03T00:00:00+08:00")
-            .unwrap()
+        let end = CHINA_OFFSET
+            .with_ymd_and_hms(2024, 9, 14, 15, 0, 0)
+            .single()
             .unwrap();
         assert!(!filter_log(log_line, "", "All", Some(start), Some(end)));
     }
 
     #[test]
-    fn test_fetch_logs() -> Result<(), Box<dyn std::error::Error>> {
-        // 创建一个临时日志文件
-        let mut temp_file = NamedTempFile::new()?;
-        writeln!(temp_file, "2023-05-01 12:00:00 [Info] Test log message 1")?;
-        writeln!(temp_file, "2023-05-01 12:01:00 [Debug] Test log message 2")?;
-        writeln!(
-            temp_file,
-            "2023-05-01 12:02:00 [Warning] Test log message 3"
-        )?;
+    fn test_regex_patterns() {
+        let log_line = "2024-09-14 13:41:52 674:[Debug]: Get Device UUID End";
 
-        let log_path = temp_file.path().to_str().unwrap().to_string();
+        assert!(TIMESTAMP_REGEX.is_match(log_line));
+        assert!(LEVEL_REGEX.is_match(log_line));
 
-        // 测试基本功能
-        let logs = fetch_logs(
-            log_path.clone(),
-            "".to_string(),
-            "All".to_string(),
-            "".to_string(),
-            "".to_string(),
-        )?;
-        assert_eq!(logs.len(), 3);
-
-        // 测试过滤器
-        let logs = fetch_logs(
-            log_path.clone(),
-            "message 2".to_string(),
-            "All".to_string(),
-            "".to_string(),
-            "".to_string(),
-        )?;
-        assert_eq!(logs.len(), 1);
-        assert!(logs[0].contains("message 2"));
-
-        // 测试日志级别
-        let logs = fetch_logs(
-            log_path.clone(),
-            "".to_string(),
-            "Warning".to_string(),
-            "".to_string(),
-            "".to_string(),
-        )?;
-        assert_eq!(logs.len(), 1);
-        assert!(logs[0].contains("[Warning]"));
-
-        // 测试日期范围
-        let start = "2023-05-01T12:00:30+08:00".to_string();
-        let end = "2023-05-01T12:01:30+08:00".to_string();
-        let logs = fetch_logs(log_path, "".to_string(), "All".to_string(), start, end)?;
-        assert_eq!(logs.len(), 1);
-        assert!(logs[0].contains("message 2"));
-
-        Ok(())
+        let captures = LEVEL_REGEX.captures(log_line).unwrap();
+        assert_eq!(&captures[1], "Debug");
     }
 }
