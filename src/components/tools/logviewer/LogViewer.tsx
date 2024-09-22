@@ -86,6 +86,23 @@ const LogViewer: React.FC = () => {
       }
     };
 
+    const logCounts = React.useMemo(() => {
+      const counts = {
+        total: filteredLogs.length,
+        Debug: 0,
+        Info: 0,
+        Warning: 0,
+        Error: 0
+      };
+      filteredLogs.forEach(log => {
+        if (log.includes('[Debug]')) counts.Debug++;
+        else if (log.includes('[Info]')) counts.Info++;
+        else if (log.includes('[Warning]')) counts.Warning++;
+        else if (log.includes('[Error]')) counts.Error++;
+      });
+      return counts;
+    }, [filteredLogs]);
+
 
 
 
@@ -130,13 +147,15 @@ const LogViewer: React.FC = () => {
       </ControlPanel>
       <LogContent>
         {logPath && (
-          <LogInfo>
-            <div>当前日志文件：{logPath}</div>
-            {startDateTime && endDateTime && (
+            <LogInfo>
+              <div>当前日志文件：{logPath}</div>
               <div>
-                日志时间范围：{formatDateTime(startDateTime)} - {formatDateTime(endDateTime)}
+                日志总数：{logCounts.total} |
+                Debug: {logCounts.Debug} |
+                Info: {logCounts.Info} |
+                Warning: {logCounts.Warning} |
+                Error: {logCounts.Error}
               </div>
-            )}
             <BookmarkList>
               {filteredBookmarks.map((bookmarkIndex, index) => (
                 <BookmarkItem key={index} onClick={() => jumpToBookmark(bookmarkIndex)}>
