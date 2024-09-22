@@ -25,7 +25,7 @@ export const useLogViewer = (fetchFunction: string) => {
   const [path, setPath] = useState(() => localStorage.getItem(`${fetchFunction}Path`) || '');
   const [error, setError] = useState<string | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [bookmarks, setBookmarks] = useState<number[]>(() => {
+  const [bookmarks, setBookmarks] = useState<string[]>(() => {
     const savedBookmarks = localStorage.getItem(`${fetchFunction}Bookmarks`);
     return savedBookmarks ? JSON.parse(savedBookmarks) : [];
   });
@@ -175,29 +175,36 @@ export const useLogViewer = (fetchFunction: string) => {
     setIsInitialLoad(true);
   }, [fetchFunction]);
 
-  const toggleBookmark = useCallback((index: number) => {
+  const filteredBookmarks = useMemo(() => {
+    return bookmarks
+      .map(bookmarkedLog => filteredLogs.findIndex(log => log === bookmarkedLog))
+      .filter(index => index !== -1);
+  }, [filteredLogs, bookmarks]);
+
+  const toggleBookmark = useCallback((filteredIndex: number) => {
+    const logToToggle = filteredLogs[filteredIndex];
     setBookmarks(prevBookmarks => {
-      const newBookmarks = prevBookmarks.includes(index)
-        ? prevBookmarks.filter(i => i !== index)
-        : [...prevBookmarks, index].sort((a, b) => a - b);
+      const newBookmarks = prevBookmarks.includes(logToToggle)
+        ? prevBookmarks.filter(log => log !== logToToggle)
+        : [...prevBookmarks, logToToggle];
       localStorage.setItem(`${fetchFunction}Bookmarks`, JSON.stringify(newBookmarks));
       return newBookmarks;
     });
-  }, [fetchFunction]);
+  }, [filteredLogs, fetchFunction]);
+
+  const jumpToBookmark = useCallback((filteredIndex: number) => {
+    if (logDisplayRef.current) {
+      const logLines = logDisplayRef.current.children;
+      if (logLines[filteredIndex]) {
+        logLines[filteredIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, []);
 
   const clearBookmarks = useCallback(() => {
     setBookmarks([]);
     localStorage.removeItem(`${fetchFunction}Bookmarks`);
   }, [fetchFunction]);
-
-  const jumpToBookmark = useCallback((index: number) => {
-    if (logDisplayRef.current) {
-      const logLines = logDisplayRef.current.children;
-      if (logLines[index]) {
-        logLines[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }, []);
 
   return {
     filterMode,
@@ -218,6 +225,7 @@ export const useLogViewer = (fetchFunction: string) => {
     fetchLogs,
     filteredLogs,
     bookmarks,
+    filteredBookmarks,
     toggleBookmark,
     clearBookmarks,
     jumpToBookmark,

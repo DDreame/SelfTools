@@ -40,6 +40,7 @@ const LogViewer: React.FC = () => {
       clearCache,
       filteredLogs,
       bookmarks,
+      filteredBookmarks,
       toggleBookmark,
       clearBookmarks,
       jumpToBookmark,
@@ -120,9 +121,9 @@ const LogViewer: React.FC = () => {
               </div>
             )}
             <BookmarkList>
-              {bookmarks.map((bookmarkIndex) => (
-                <BookmarkItem key={bookmarkIndex} onClick={() => jumpToBookmark(bookmarkIndex)}>
-                  跳转到书签 {bookmarkIndex + 1}
+              {filteredBookmarks.map((bookmarkIndex, index) => (
+                <BookmarkItem key={index} onClick={() => jumpToBookmark(bookmarkIndex)}>
+                  跳转到书签 {index + 1}
                 </BookmarkItem>
               ))}
             </BookmarkList>
@@ -134,9 +135,9 @@ const LogViewer: React.FC = () => {
             <LogLine key={index}>
               <BookmarkButton
                 onClick={() => toggleBookmark(index)}
-                $isBookmarked={bookmarks.includes(index)}
+                $isBookmarked={filteredBookmarks.includes(index)}
               >
-                {bookmarks.includes(index) ? '★' : '☆'}
+                {filteredBookmarks.includes(index) ? '★' : '☆'}
               </BookmarkButton>
               {renderLogLine(log)}
             </LogLine>
