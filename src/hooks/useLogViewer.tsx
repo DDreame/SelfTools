@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import debounce from 'lodash/debounce';
 import moment from 'moment-timezone';
@@ -25,6 +25,11 @@ export const useLogViewer = (fetchFunction: string) => {
   const [path, setPath] = useState(() => localStorage.getItem(`${fetchFunction}Path`) || '');
   const [error, setError] = useState<string | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [bookmarks, setBookmarks] = useState<number[]>(() => {
+    const savedBookmarks = localStorage.getItem(`${fetchFunction}Bookmarks`);
+    return savedBookmarks ? JSON.parse(savedBookmarks) : [];
+  });
+  const logDisplayRef = useRef<HTMLDivElement>(null);
 
   const fetchLogs = useCallback(async () => {
     if (!path) return;
@@ -170,6 +175,29 @@ export const useLogViewer = (fetchFunction: string) => {
     setIsInitialLoad(true);
   }, [fetchFunction]);
 
+  const toggleBookmark = useCallback((index: number) => {
+    setBookmarks(prevBookmarks => {
+      const newBookmarks = prevBookmarks.includes(index)
+        ? prevBookmarks.filter(i => i !== index)
+        : [...prevBookmarks, index].sort((a, b) => a - b);
+      localStorage.setItem(`${fetchFunction}Bookmarks`, JSON.stringify(newBookmarks));
+      return newBookmarks;
+    });
+  }, [fetchFunction]);
+
+  const clearBookmarks = useCallback(() => {
+    setBookmarks([]);
+    localStorage.removeItem(`${fetchFunction}Bookmarks`);
+  }, [fetchFunction]);
+
+  const jumpToBookmark = useCallback((index: number) => {
+    if (logDisplayRef.current) {
+      const logLines = logDisplayRef.current.children;
+      if (logLines[index]) {
+        logLines[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, []);
 
   return {
     filterMode,
@@ -189,5 +217,10 @@ export const useLogViewer = (fetchFunction: string) => {
     clearCache,
     fetchLogs,
     filteredLogs,
+    bookmarks,
+    toggleBookmark,
+    clearBookmarks,
+    jumpToBookmark,
+    logDisplayRef,
   };
 };

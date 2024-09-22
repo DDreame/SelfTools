@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react';
-import { open } from '@tauri-apps/api/dialog';
+import React from 'react';
+import { open, save } from '@tauri-apps/api/dialog';
+import { writeTextFile } from '@tauri-apps/api/fs';
 import { useLogViewer, FilterModes } from '../../../hooks/useLogViewer';
-import moment from 'moment-timezone';
 import {
   LogViewerContainer,
   ControlPanel,
@@ -13,6 +13,11 @@ import {
   StyledButton,
   StyledDateTimeInput,
   renderLogLine,
+  formatDateTime,
+  LogLine,
+  BookmarkButton,
+  BookmarkList,
+  BookmarkItem,
 } from './logUtil';
 
 
@@ -34,6 +39,11 @@ const LogViewer: React.FC = () => {
       resetToDefault,
       clearCache,
       filteredLogs,
+      bookmarks,
+      toggleBookmark,
+      clearBookmarks,
+      jumpToBookmark,
+      logDisplayRef,
     } = useLogViewer('fetch_logs');
 
     const selectLogFile = async () => {
@@ -47,10 +57,17 @@ const LogViewer: React.FC = () => {
         setEndDateTime('');
       }
     };
+    const exportLogs = async () => {
+      const filePath = await save({
+        filters: [{ name: '文本文件', extensions: ['txt'] }]
+      });
+      if (filePath) {
+        const content = filteredLogs.join('\n');
+        await writeTextFile(filePath, content);
+        alert('日志导出成功！');
+      }
+    };
 
-  const formatDateTime = useCallback((dateTime: string): string => {
-    return moment(dateTime).format('YYYY-MM-DD HH:mm:ss');
-  }, []);
 
 
 
@@ -90,6 +107,8 @@ const LogViewer: React.FC = () => {
         />
         <StyledButton onClick={resetToDefault}>重置过滤器</StyledButton>
         <StyledButton onClick={clearCache}>清除缓存</StyledButton>
+        <StyledButton onClick={exportLogs}>导出日志</StyledButton>
+        <StyledButton onClick={clearBookmarks}>清除所有书签</StyledButton>
       </ControlPanel>
       <LogContent>
         {logPath && (
@@ -100,14 +119,27 @@ const LogViewer: React.FC = () => {
                 日志时间范围：{formatDateTime(startDateTime)} - {formatDateTime(endDateTime)}
               </div>
             )}
+            <BookmarkList>
+              {bookmarks.map((bookmarkIndex) => (
+                <BookmarkItem key={bookmarkIndex} onClick={() => jumpToBookmark(bookmarkIndex)}>
+                  跳转到书签 {bookmarkIndex + 1}
+                </BookmarkItem>
+              ))}
+            </BookmarkList>
           </LogInfo>
         )}
         {error && <div style={{ color: 'red', padding: '10px' }}>{error}</div>}
-        <LogDisplay>
+        <LogDisplay ref={logDisplayRef}>
           {filteredLogs.map((log, index) => (
-            <React.Fragment key={index}>
+            <LogLine key={index}>
+              <BookmarkButton
+                onClick={() => toggleBookmark(index)}
+                $isBookmarked={bookmarks.includes(index)}
+              >
+                {bookmarks.includes(index) ? '★' : '☆'}
+              </BookmarkButton>
               {renderLogLine(log)}
-            </React.Fragment>
+            </LogLine>
           ))}
         </LogDisplay>
       </LogContent>

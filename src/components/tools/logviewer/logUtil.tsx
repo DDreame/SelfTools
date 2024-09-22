@@ -93,6 +93,8 @@ export const StyledDateTimeInput = styled.input`
 `;
 
 export const LogLine = styled.div`
+  display: flex;
+  align-items: center;
   margin-bottom: 5px;
 `;
 
@@ -120,6 +122,36 @@ export const LogViewerContainer = styled.div`
   overflow: hidden;
   background-color: ${props => props.theme.background};
   color: ${props => props.theme.text};
+`;
+
+export const BookmarkButton = styled.button<{ $isBookmarked: boolean }>`
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-right: 5px;
+  color: ${props => props.$isBookmarked ? props.theme.primary : props.theme.text};
+`;
+
+export const BookmarkList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+`;
+
+export const BookmarkItem = styled.button`
+  background-color: ${props => props.theme.primary};
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 0.9em;
+
+  &:hover {
+    background-color: ${props => props.theme.primary}dd;
+  }
 `;
 
 export const parseTimestamp = (timestamp: string): string | null => {
@@ -155,12 +187,12 @@ export const renderLogLine = (line: string) => {
   if (match) {
     const [, timestamp, level, , content] = match;
     return (
-      <LogLine>
+      <>
         <TimeStamp>{timestamp}</TimeStamp>{' '}
         <LogLevel level={level}>{level}</LogLevel>{' '}
         {highlightJson(content)}
-      </LogLine>
+      </>
     );
   }
-  return <LogLine>{line}</LogLine>;
+  return <>{line}</>;
 };
