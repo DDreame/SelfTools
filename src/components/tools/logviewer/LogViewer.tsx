@@ -13,7 +13,6 @@ import {
   StyledButton,
   StyledDateTimeInput,
   renderLogLine,
-  formatDateTime,
   LogLine,
   BookmarkButton,
   BookmarkList,

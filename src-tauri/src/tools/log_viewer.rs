@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use tauri::command;
 
-const MAX_READ_SIZE: u64 = 2 * 1024 * 1024; // 1MB
+const MAX_READ_SIZE: u64 = 10 * 1024 * 1024; // 10MB
 
 lazy_static! {
     static ref TIMESTAMP_REGEX: Regex = Regex::new(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3}").unwrap();
@@ -26,8 +26,8 @@ pub fn fetch_logs(
         .metadata()
         .map_err(|e| format!("无法获取文件元数据: {}", e))?
         .len();
-    let start_pos = file_size.saturating_sub(MAX_READ_SIZE);
 
+    let start_pos = file_size.saturating_sub(MAX_READ_SIZE);
     let mut reader = BufReader::new(file);
     reader
         .seek(SeekFrom::Start(start_pos))
@@ -36,11 +36,19 @@ pub fn fetch_logs(
     let start_date_time = parse_date_time(&start_date_time)?;
     let end_date_time = parse_date_time(&end_date_time)?;
 
-    let logs: Vec<String> = reader
-        .lines()
-        .map_while(Result::ok)
-        .filter(|line| filter_log(line, &filter, &level, start_date_time, end_date_time))
-        .collect();
+    let mut logs = Vec::new();
+    let mut line = String::new();
+
+    while reader
+        .read_line(&mut line)
+        .map_err(|e| format!("读取行时出错: {}", e))?
+        > 0
+    {
+        if filter_log(&line, &filter, &level, start_date_time, end_date_time) {
+            logs.push(line.trim().to_string());
+        }
+        line.clear();
+    }
 
     Ok(logs)
 }
