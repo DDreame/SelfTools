@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { open, save } from '@tauri-apps/api/dialog';
 import { writeTextFile } from '@tauri-apps/api/fs';
 import { useLogViewer, FilterModes } from '../../../hooks/useLogViewer';
@@ -46,6 +46,23 @@ const LogViewer: React.FC = () => {
       jumpToBookmark,
       logDisplayRef,
     } = useLogViewer('fetch_logs');
+
+    const [fontSize, setFontSize] = useState(14);
+
+    const handleWheel = useCallback((e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        setFontSize(prevSize => {
+          const newSize = prevSize + (e.deltaY > 0 ? -1 : 1);
+          return Math.min(Math.max(newSize, 8), 24);
+        });
+      }
+    }, []);
+
+    useEffect(() => {
+      window.addEventListener('wheel', handleWheel, { passive: false });
+      return () => window.removeEventListener('wheel', handleWheel);
+    }, [handleWheel]);
 
     const selectLogFile = async () => {
       const selected = await open({
@@ -130,7 +147,7 @@ const LogViewer: React.FC = () => {
           </LogInfo>
         )}
         {error && <div style={{ color: 'red', padding: '10px' }}>{error}</div>}
-        <LogDisplay ref={logDisplayRef}>
+        <LogDisplay ref={logDisplayRef} style={{ fontSize: `${fontSize}px` }}>
           {filteredLogs.map((log, index) => (
             <LogLine key={index}>
               <BookmarkButton

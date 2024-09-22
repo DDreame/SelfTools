@@ -33,7 +33,7 @@ export const LogDisplay = styled.div`
   color: ${props => props.theme.logText};
   padding: 10px;
   font-family: monospace;
-  font-size: 0.9em;
+  font-size: ${props => props.fontSize || 0.9}em;
   margin: 0;
 
   &::-webkit-scrollbar {
