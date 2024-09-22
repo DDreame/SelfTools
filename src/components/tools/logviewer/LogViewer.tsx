@@ -104,8 +104,6 @@ const LogViewer: React.FC = () => {
     }, [filteredLogs]);
 
 
-
-
   return (
     <LogViewerContainer>
       <ControlPanel>
@@ -146,25 +144,23 @@ const LogViewer: React.FC = () => {
         <StyledButton onClick={clearBookmarks}>清除所有书签</StyledButton>
       </ControlPanel>
       <LogContent>
-        {logPath && (
-            <LogInfo>
-              <div>当前日志文件：{logPath}</div>
-              <div>
-                日志总数：{logCounts.total} |
-                Debug: {logCounts.Debug} |
-                Info: {logCounts.Info} |
-                Warning: {logCounts.Warning} |
-                Error: {logCounts.Error}
-              </div>
-            <BookmarkList>
-              {filteredBookmarks.map((bookmarkIndex, index) => (
-                <BookmarkItem key={index} onClick={() => jumpToBookmark(bookmarkIndex)}>
-                  跳转到书签 {index + 1}
-                </BookmarkItem>
-              ))}
-            </BookmarkList>
-          </LogInfo>
-        )}
+          <LogInfo>
+            <div>当前日志文件：{logPath}</div>
+            <div>
+              日志总数：{logCounts.total} |
+              Debug: {logCounts.Debug} |
+              Info: {logCounts.Info} |
+              Warning: {logCounts.Warning} |
+              Error: {logCounts.Error}
+            </div>
+          <BookmarkList>
+            {filteredBookmarks.map((bookmarkIndex, index) => (
+              <BookmarkItem key={index} onClick={() => jumpToBookmark(bookmarkIndex)}>
+                跳转到书签 {index + 1}
+              </BookmarkItem>
+            ))}
+          </BookmarkList>
+        </LogInfo>
         {error && <div style={{ color: 'red', padding: '10px' }}>{error}</div>}
         <LogDisplay ref={logDisplayRef} style={{ fontSize: `${fontSize}px` }}>
           {filteredLogs.map((log, index) => (
