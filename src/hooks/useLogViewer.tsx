@@ -29,7 +29,9 @@ export const useLogViewer = (fetchFunction: string) => {
     const savedBookmarks = localStorage.getItem(`${fetchFunction}Bookmarks`);
     return savedBookmarks ? JSON.parse(savedBookmarks) : [];
   });
+  const [autoScroll, setAutoScroll] = useState(() => localStorage.getItem(`${fetchFunction}AutoScroll`) === 'true');
   const logDisplayRef = useRef<HTMLDivElement>(null);
+
 
   const fetchLogs = useCallback(async () => {
     if (!path) return;
@@ -150,6 +152,18 @@ export const useLogViewer = (fetchFunction: string) => {
     localStorage.setItem(`${fetchFunction}LogPath`, path);
   }, [path]);
 
+  useEffect(() => {
+    localStorage.setItem(`${fetchFunction}AutoScroll`, autoScroll.toString());
+  }, [autoScroll, fetchFunction]);
+
+  useEffect(() => {
+    if (autoScroll || (!filter && level === 'All' && !startDateTime && !endDateTime)) {
+      if (logDisplayRef.current) {
+        logDisplayRef.current.scrollTop = logDisplayRef.current.scrollHeight;
+      }
+    }
+  }, [filteredLogs, autoScroll, filter, level, startDateTime, endDateTime]);
+
   const resetToDefault = useCallback(() => {
     setFilter('');
     setLevel('All');
@@ -229,6 +243,8 @@ export const useLogViewer = (fetchFunction: string) => {
     toggleBookmark,
     clearBookmarks,
     jumpToBookmark,
+    autoScroll,
+    setAutoScroll,
     logDisplayRef,
   };
 };

@@ -43,6 +43,8 @@ const LogViewer: React.FC = () => {
       toggleBookmark,
       clearBookmarks,
       jumpToBookmark,
+      autoScroll,
+      setAutoScroll,
       logDisplayRef,
     } = useLogViewer('fetch_logs');
 
@@ -112,6 +114,9 @@ const LogViewer: React.FC = () => {
             <option key={mode} value={mode}>{mode}</option>
           ))}
         </StyledSelect>
+        <StyledButton onClick={() => setAutoScroll(!autoScroll)}>
+          {autoScroll ? '关闭自动滚动' : '开启自动滚动'}
+        </StyledButton>
         <StyledInput
           type="text"
           placeholder="过滤日志"
