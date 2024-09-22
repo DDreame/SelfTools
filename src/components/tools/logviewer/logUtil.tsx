@@ -152,6 +152,21 @@ export const BookmarkItem = styled.button`
   }
 `;
 
+const getLogLevelColor = (logLevel: string): string => {
+  switch (logLevel) {
+    case '[Debug]:':
+      return '#808080'; // 灰色
+    case '[Info]:':
+      return '#000000'; // 黑色
+    case '[Warning]:':
+      return '#FFA500'; // 橙色
+    case '[Error]:':
+      return '#FF0000'; // 红色
+    default:
+      return '#000000'; // 默认黑色
+  }
+};
+
 export const parseTimestamp = (timestamp: string): string | null => {
   const date = moment.tz(timestamp, 'YYYY-MM-DD HH:mm:ss SSS', 'Asia/Shanghai');
   if (!date.isValid()) {
@@ -187,7 +202,7 @@ export const renderLogLine = (line: string) => {
     return (
       <>
         <TimeStamp>{timestamp}</TimeStamp>{' '}
-        <LogLevel level={level}>{level}</LogLevel>{' '}
+        <span style={{ color: getLogLevelColor(level) }}>{level}</span>{' '}
         {highlightJson(content)}
       </>
     );
