@@ -93,8 +93,6 @@ export const StyledDateTimeInput = styled.input`
 `;
 
 export const LogLine = styled.div`
-  display: flex;
-  align-items: center;
   margin-bottom: 5px;
 `;
 
